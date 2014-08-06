@@ -1,0 +1,37 @@
+doctype 5
+html
+  head
+    meta(http-equiv="X-UA-Compatible" content="IE=edge")
+    meta(http-equiv="PRAGMA" content="NO-CACHE")
+    title Build Monitor
+    link(rel="shortcut icon" href="images/Icon.ico")
+    link(rel='stylesheet', href='/stylesheets/bootstrap/bootstrap.css')
+    script(src='js/lib/jquery/jquery.min.js').
+    script(src='js/JavascriptUtilities.js').
+    script(src='js/lib/bootstrap/bootstrap.js').
+    script(src='js/lib/momentjs/moment.min.js').
+    script(src='js/lib/angular/angular.js').
+    script(src='js/lib/angular-momentjs/angular-momentjs.min.js').
+    script(src='js/lib/angular/angular-route.js').
+    script(src='js/app.js').
+    script(src='js/controllers/controller.js').
+    script(src='js/services/fileListService.js').
+
+  body(ng-app='nodeApp' ng-controller="controller")
+    nav.navbar.navbar-default
+      span Total builds since the start of time: {{builds.Count}}
+      span Total successfull builds since the start of time: {{builds.Data.SUCCESS.length}}
+      span Total failed builds since the start of time: {{builds.Data.FAILURE.length}}
+    .container
+      div(ng-repeat="build in builds.Data.SUCCESS")
+        {{build.number}}
+        {{build.branchName}}
+        {{build.startDate | amDateFormat:'dddd, MMMM Do YYYY, h:mm:ss a'}}
+      .row
+        .col-sm-4 http-equi 
+        .col-sm-4 you
+        .col-sm-4 guys
+      .row
+        .col-sm-4 http-equi
+        .col-sm-4 you
+        .col-sm-4 guys
