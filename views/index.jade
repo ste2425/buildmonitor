@@ -16,22 +16,46 @@ html
     script(src='js/app.js').
     script(src='js/controllers/controller.js').
     script(src='js/services/fileListService.js').
-
+    style.
+      .inline-headers h5{
+        display: inline-block;
+        vertical-align: baseline;
+        padding-right: 3px;
+      }
+      .navbar-brand{
+        padding-bottom:2px;
+      }
   body(ng-app='nodeApp' ng-controller="controller")
     nav.navbar.navbar-default
-      span Total builds since the start of time: {{builds.Count}}
-      span Total successfull builds since the start of time: {{builds.Data.SUCCESS.length}}
-      span Total failed builds since the start of time: {{builds.Data.FAILURE.length}}
+      .container
+        .navbar-brand Build Monitor
+          .inline-headers
+            h5 Total: {{Display.Count.All}} 
+            h5 Success: {{Display.Count.Success}} 
+            h5 Fail: {{Display.Count.Fail}} 
+        h5.pull-right {{Display.Run}}
     .container
-      div(ng-repeat="build in builds.Data.SUCCESS")
-        {{build.number}}
-        {{build.branchName}}
-        {{build.startDate | amDateFormat:'dddd, MMMM Do YYYY, h:mm:ss a'}}
-      .row
-        .col-sm-4 http-equi 
-        .col-sm-4 you
-        .col-sm-4 guys
-      .row
-        .col-sm-4 http-equi
-        .col-sm-4 you
-        .col-sm-4 guys
+      div.col-sm-4 TODAY
+        hr
+        div Average 
+          span {{Display.Today.Average}}
+        div Queue 
+          span {{Display.Today.Queue}}
+        div Success {{Display.Today.Success}}
+        div Fail {{Display.Today.Fail}}
+      div.col-sm-4 YESTERDAY
+        hr
+        div Average 
+          span {{Display.Yesterday.Average}}
+        div Queue 
+          span {{Display.Yesterday.Queue}}
+        div Success {{Display.Yesterday.Success}}
+        div Fail {{Display.Yesterday.Fail}}
+      div.col-sm-4 WEEK
+        hr
+        div Average 
+          span {{Display.Week.Average}}
+        div Queue 
+          span {{Display.Week.Queue}}
+        div Success {{Display.Week.Success}}
+        div Fail {{Display.Week.Fail}}

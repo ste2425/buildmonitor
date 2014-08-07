@@ -6,21 +6,67 @@ var config = require('./../../config.js');
 var mongo = require('./../../controllers/MongoDb');
 var async = require('async');
 var moment = require('moment');
+var run = '';
 
 exports.getBuilds = function(callback) {
 	//Return all builds from database.
-	mongo.readBuild({}, function(err, data){
-		if(!err){
-			var d = data.Data
-			data.Data = utilities.group(data.Data, function(groupby) {
+	mongo.readBuild({}, function(err, data) {
+		if (!err) {
+			var t = data.Data.length,
+				ts = 0,
+				tf = 0,
+				day = [],
+				yesterday = [],
+				week = [];
+			//Get build count
+			for (var i in data.Data) {
+				if (data.Data[i].status == 'SUCCESS') {
+					ts++;
+				} else if (data.Data[i].status == 'FAILURE') {
+					tf++;
+				}
+			}
+			//filter builds by age
+			data.Data.forEach(function(item) {
+				var diff = moment().diff(moment(item.startDate, 'YYYY/MM/DD'), 'days');
+				if (diff == 0 || diff < 7) {
+					week.push(item);
+					if (diff == 0) {
+						day.push(item);
+					} else if (diff == 1) {
+						yesterday.push(item);
+					}
+				}
+			});
+			//group builds by status
+			day = utilities.group(day, function(groupby) {
 				return [groupby.status];
 			});
-			data.Data.Ungrouped = d;
+			yesterday = utilities.group(yesterday, function(groupby) {
+				return [groupby.status];
+			});
+			week = utilities.group(week, function(groupby) {
+				return [groupby.status];
+			});
 		}
-		callback(err, data);
+		callback(err, {
+			Count: {
+				Total: t,
+				TotalSuccess: ts,
+				TotalFail: tf
+			},
+			Data: {
+				Today: day,
+				Yesterday: yesterday,
+				SevenDays: week,
+				Run: run
+			}
+		});
 	});
 }
-exports.findBuildsToAdd = function(callback) {
+exports.findBuildsToAdd = _findBuildsToAdd;
+
+function _findBuildsToAdd(callback, single) {
 	var _StoredBuilds = [];
 	var _ReturnedBuilds = [];
 
@@ -59,12 +105,18 @@ exports.findBuildsToAdd = function(callback) {
 			});
 		}
 	], function(err, res) {
-		if (err) {
-			callback({
-				Error: err
-			}, null);
-		} else {
-			callback(null, _ReturnedBuilds);
+		if (!single) {
+			setTimeout(_findBuildsToAdd, 60000);
+		}
+		run = moment().format("dddd, MMMM Do YYYY, h:mm:ss a");
+		if (callback) {
+			if (err) {
+				callback({
+					Error: err
+				}, null);
+			} else {
+				callback(null, _ReturnedBuilds);
+			}
 		}
 	});
 }
@@ -94,6 +146,7 @@ function _GetBuildsToAdd(New, Existing, cb) {
 
 function _AddBuilds(Builds, cb) {
 	async.series([
+
 		function(seriesCB) {
 			//Get success build info
 			async.map(Builds.Success, function(item, mapCB) {
@@ -111,13 +164,12 @@ function _AddBuilds(Builds, cb) {
 					function(t) {
 						_MakeGetUrlCall(item[0].href, function(err, data) {
 							if (item[0].buildTypeId == 'bramley_PublishToStore') {
-								Build.finishDate = data.finishDate;
+								Build.finishDate = convertDate(data.finishDate);
 							} else if (item[0].buildTypeId == 'bramley_InitiateBuild') {
 								Build.number = data.number;
 								Build.branchName = data.branchName;
-								Build.queuedDate = data.queuedDate;
-								Build.startDate = data.startDate;
-								console.log(moment(data.startDate), data.startDate)
+								Build.queuedDate = convertDate(data.queuedDate);
+								Build.startDate = convertDate(data.startDate);
 							}
 							t();
 						});
@@ -125,13 +177,12 @@ function _AddBuilds(Builds, cb) {
 					function(t) {
 						_MakeGetUrlCall(item[1].href, function(err, data) {
 							if (item[1].buildTypeId == 'bramley_PublishToStore') {
-								Build.finishDate = data.finishDate;
+								Build.finishDate = convertDate(data.finishDate);
 							} else if (item[1].buildTypeId == 'bramley_InitiateBuild') {
 								Build.number = data.number;
 								Build.branchName = data.branchName;
-								Build.queuedDate = data.queuedDate;
-								Build.startDate = data.startDate;
-								console.log(moment(data.startDate, data.startDate))
+								Build.queuedDate = convertDate(data.queuedDate);
+								Build.startDate = convertDate(data.startDate);
 							}
 							t();
 						});
@@ -164,6 +215,7 @@ function _AddBuilds(Builds, cb) {
 					Build.number = data.number;
 					Build.branchName = data.branchName;
 					Build.status = 'FAILURE';
+					Build.startDate = convertDate(data.startDate);
 					mapCB(err, Build);
 				});
 			}, function(err, res) {
@@ -191,9 +243,9 @@ function convertDate(t) {
 			nums.push(match[i]);
 		}
 		//0: year, 1: month, 2: day, 3: hours, 4: min, 5: sec
-		var str = nums[0] + "-" + nums[1] + "-" + nums[2] + "T" + nums[3] + ":" + nums[4] + ":" + nums[5];
-
-		return moment(str);
+		return nums[0] + "-" + nums[1] + "-" + nums[2] + "T" + nums[3] + ":" + nums[4] + ":" + nums[5];
+	} else {
+		return t;
 	}
 }
 
@@ -296,3 +348,5 @@ function _GetBuilds(cb) {
 		}
 	});
 }
+
+_findBuildsToAdd();

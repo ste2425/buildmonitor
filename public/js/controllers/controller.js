@@ -1,85 +1,77 @@
-app.controller('controller', function($scope,$http,$route, $timeout,fileListService){
-    fileListService.getBuilds(function(err, data){
-        if(!err){
-            $scope.builds = data;
-        }else{
-            $scope.builds = [];
+app.controller('controller', function($scope, $http, $route, $timeout, fileListService) {
+
+    $scope.init = function() {
+        $scope.Display = {
+            Count: {
+                All: 0,
+                Success: 0,
+                Fail: 0
+            },
+            Today: {
+                Queue: 0,
+                Average: 0,
+                Success: 0,
+                Fail: 0
+            },
+            Yesterday: {
+                Queue: 0,
+                Average: 0,
+                Success: 0,
+                Fail: 0
+            },
+            Week: {
+                Queue: 0,
+                Average: 0,
+                Success: 0,
+                Fail: 0
+            },
+            Run: ''
         }
-    })
+        $scope.getBuilds();
+    }
+    $scope.getBuilds = function() {
+        fileListService.getBuilds(function(err, data) {
+            if (!err) {
+                $scope.Display.Today.Queue = calcAvg(data.Data.Today.SUCCESS, true);
+                $scope.Display.Today.Average = calcAvg(data.Data.Today.SUCCESS);
+                $scope.Display.Today.Success = data.Data.Today.SUCCESS.length;
+                $scope.Display.Today.Fail = data.Data.Today.FAILURE.length;
+
+                $scope.Display.Yesterday.Queue = calcAvg(data.Data.Yesterday.SUCCESS, true);
+                $scope.Display.Yesterday.Average = calcAvg(data.Data.Yesterday.SUCCESS);
+                $scope.Display.Yesterday.Success = data.Data.Yesterday.SUCCESS.length;
+                $scope.Display.Yesterday.Fail = data.Data.Yesterday.FAILURE.length;
+
+                $scope.Display.Week.Queue = calcAvg(data.Data.SevenDays.SUCCESS, true);
+                $scope.Display.Week.Average = calcAvg(data.Data.SevenDays.SUCCESS);
+                $scope.Display.Week.Success = data.Data.SevenDays.SUCCESS.length;
+                $scope.Display.Week.Fail = data.Data.SevenDays.FAILURE.length;
+                $scope.Display.Run = data.Data.Run;
+
+                $scope.Display.Count.All = data.Count.Total;
+                $scope.Display.Count.Success = data.Count.TotalSuccess;
+                $scope.Display.Count.Fail = data.Count.TotalFail;
+            }
+            $timeout($scope.getBuilds, 30000);
+        })
+    }
+
+    $scope.init();
 });
 
-
-Date.prototype.FormatDate = function(){
-  var dd=this.getDate();
-  if(dd<10)dd='0'+dd;
-  var mm=this.getMonth()+1;
-  if(mm<10)mm='0'+mm;
-  var yyyy=this.getFullYear();
-  return String(dd+"-"+mm+"-"+yyyy);
-}
-
-function scroll(id, direction){  
- $('#' + id).animate({
-        scrollLeft: direction + '=' + $('#' + id).width()
-    }, 500);
-}
-
-function setSelectedColor(object){
-    if(!$('#popup').is(":visible")){
-        var elements = object.parentNode.childNodes;
-
-        for(var i in elements){
-            if(elements[i].className){
-            elements[i].className = elements[i].className.replace('test', '');
-            }
-        }
-        object.className += object.className ? ' test' : 'test';
+function calcAvg(items, t) {
+    var start = 'startDate';
+    var stop = 'finishDate';
+    var avg = 0;
+    if(t){
+        start = 'queuedDate';
+        stop = 'startDate';
     }
+    for (var i in items) {
+        var d = moment(items[i][stop]).diff(moment(items[i][start]))
+        avg += d;
+    }
+    avg = avg / items.length;
+    d = moment.duration(avg);
+    return Math.floor(d.asHours()) + moment.utc(avg).format(":mm:ss");
 }
-
-function addResizeListener() {
-    resize();
-    if (window.addEventListener)
-        window.addEventListener("resize", resize, false);
-    else
-        document.body.onresize = resize;
-
-}
-
-function resize() {
-    var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-    var height2 = (height - (document.getElementById("title").offsetHeight + document.getElementById("navigation").offsetHeight + 10));
-    if (document.getElementById("mainTable")) {
-        document.getElementById("mainTable").style.height = (height2 > 200) ? height2 + "px" : "200px";
-    }
-}
-
-function displayTime(input) {
-    var str = "";
-    var currentTime;
-
-    if(input){
-        currentTime = new Date(Date.parse(input))
-        var date = currentTime.getDate() + "/" + currentTime.getMonth() + "/" + currentTime.getFullYear();
-    }else{
-        currentTime = new Date()
-    }
-    var hours = currentTime.getHours()
-    var minutes = currentTime.getMinutes()
-    var seconds = currentTime.getSeconds()
-
-    if (minutes < 10) {
-        minutes = "0" + minutes
-    }
-    if (seconds < 10) {
-        seconds = "0" + seconds
-    }
-    str += ((date) ? date : "") + " " + hours + ":" + minutes + ":" + seconds + " ";
-    if(hours > 11){
-        str += "PM"
-    } else {
-        str += "AM"
-    }
-    return str;
-}
-
