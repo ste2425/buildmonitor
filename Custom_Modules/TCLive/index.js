@@ -2,14 +2,13 @@ var http = require("http");
 var querystring = require('querystring');
 var parseString = require('xml2js').parseString;
 var utilities = require('./../utilities/index');
-var config = require('./../../config.js');
 var mongo = require('./../../controllers/MongoDb');
 var async = require('async');
 var moment = require('moment');
 var run = '';
 
 exports.getBuilds = function(callback) {
-	//Return all builds from database.
+	//Return all builds from database formatted for client.
 	mongo.readBuild({}, function(err, data) {
 		if (!err) {
 			var t = data.Data.length,
@@ -17,7 +16,8 @@ exports.getBuilds = function(callback) {
 				tf = 0,
 				day = [],
 				yesterday = [],
-				week = [];
+				week = [],
+				agents = [];
 			//Get build count
 			for (var i in data.Data) {
 				if (data.Data[i].status == 'SUCCESS') {
@@ -48,25 +48,66 @@ exports.getBuilds = function(callback) {
 			week = utilities.group(week, function(groupby) {
 				return [groupby.status];
 			});
+			if (!day.SUCCESS) {
+				day.SUCCESS = []
+			}
+			if (!day.FAILURE) {
+				day.FAILURE = []
+			}
+			if (!yesterday.SUCCESS) {
+				yesterday.SUCCESS = []
+			}
+			if (!yesterday.FAILURE) {
+				yesterday.FAILURE = []
+			}
+			if (!week.SUCCESS) {
+				week.SUCCESS = []
+			}
+			if (!week.FAILURE) {
+				week.FAILURE = []
+			}
+
 		}
-		callback(err, {
-			Count: {
-				Total: t,
-				TotalSuccess: ts,
-				TotalFail: tf
-			},
-			Data: {
-				Today: day,
-				Yesterday: yesterday,
-				SevenDays: week,
-				Run: run
+		//Get agent info ToDo: Remove from here
+		_MakeGetUrlCall(__CONFIG.urls.agents, function(err, res) {
+			if (!err) {
+				async.map(res.agent, function(item, cb) {
+					_MakeGetUrlCall(item.href, function(err, agent) {
+						if (!err) {
+							agents.push(agent);
+						}
+						cb()
+					});
+				}, function(err, res) {
+					fin();
+				});
+			} else {
+				fin();
 			}
 		});
+
+		function fin() {
+			//Finish function
+			callback(err, {
+				Count: {
+					Total: t,
+					TotalSuccess: ts,
+					TotalFail: tf
+				},
+				Data: {
+					Today: day,
+					Yesterday: yesterday,
+					SevenDays: week,
+					Run: run
+				},
+				Agents: agents
+			});
+		}
 	});
 }
-exports.findBuildsToAdd = _findBuildsToAdd;
 
-function _findBuildsToAdd(callback, single) {
+function _findBuildsToAdd() {
+	//run every x seconds, finds new builds and adds them to database
 	var _StoredBuilds = [];
 	var _ReturnedBuilds = [];
 
@@ -96,7 +137,7 @@ function _findBuildsToAdd(callback, single) {
 		},
 		function(cb) {
 			//Get builds that are not in database
-			_GetBuildsToAdd(_ReturnedBuilds, _StoredBuilds, function(builds) {
+			_FilterBuildsToAdd(_ReturnedBuilds, _StoredBuilds, function(builds) {
 				//Add builds to database
 				_AddBuilds(builds, function(err, data) {
 					_ReturnedBuilds = data;
@@ -105,23 +146,12 @@ function _findBuildsToAdd(callback, single) {
 			});
 		}
 	], function(err, res) {
-		if (!single) {
-			setTimeout(_findBuildsToAdd, 60000);
-		}
-		run = moment().format("dddd, MMMM Do YYYY, h:mm:ss a");
-		if (callback) {
-			if (err) {
-				callback({
-					Error: err
-				}, null);
-			} else {
-				callback(null, _ReturnedBuilds);
-			}
-		}
+		setTimeout(_findBuildsToAdd, __CONFIG.builds.checktimeout);
+		run = moment().format("MMMM Do YYYY, h:mm:ss a");
 	});
 }
 
-function _GetBuildsToAdd(New, Existing, cb) {
+function _FilterBuildsToAdd(New, Existing, cb) {
 	//Filter out existing builds and return builds to add
 	New.Success = New.Success.filter(function(item) {
 		for (var i in Existing) {
@@ -163,9 +193,9 @@ function _AddBuilds(Builds, cb) {
 					//and build complete build object.
 					function(t) {
 						_MakeGetUrlCall(item[0].href, function(err, data) {
-							if (item[0].buildTypeId == 'bramley_PublishToStore') {
+							if (item[0].buildTypeId == __CONFIG.builds.finishstep) {
 								Build.finishDate = convertDate(data.finishDate);
-							} else if (item[0].buildTypeId == 'bramley_InitiateBuild') {
+							} else if (item[0].buildTypeId == __CONFIG.builds.startstep) {
 								Build.number = data.number;
 								Build.branchName = data.branchName;
 								Build.queuedDate = convertDate(data.queuedDate);
@@ -176,9 +206,9 @@ function _AddBuilds(Builds, cb) {
 					},
 					function(t) {
 						_MakeGetUrlCall(item[1].href, function(err, data) {
-							if (item[1].buildTypeId == 'bramley_PublishToStore') {
+							if (item[1].buildTypeId == __CONFIG.builds.finishstep) {
 								Build.finishDate = convertDate(data.finishDate);
-							} else if (item[1].buildTypeId == 'bramley_InitiateBuild') {
+							} else if (item[1].buildTypeId == __CONFIG.builds.startstep) {
 								Build.number = data.number;
 								Build.branchName = data.branchName;
 								Build.queuedDate = convertDate(data.queuedDate);
@@ -251,8 +281,8 @@ function convertDate(t) {
 
 function _MakeGetUrlCall(url, callback) {
 	var options = {
-		host: "tclive",
-		port: 8111,
+		host: __CONFIG.host.hostname,
+		port: __CONFIG.host.port,
 		path: url,
 		headers: {
 			"Accept": "application/json"
@@ -274,20 +304,20 @@ function _MakeGetUrlCall(url, callback) {
 			}
 		});
 	}).on("error", function(e) {
-		console.log("error", e.message);
+		console.log("error", e.message, url);
 		callback(e, null);
 	});
 }
 
 function _GetBuilds(cb) {
-	var weekAgo = moment().subtract('days', 7).format('YYYYMMDD');
-	_MakeGetUrlCall("/guestAuth/app/rest/builds/?locator=count:10000,branch:default:any,sinceDate:" + weekAgo + "T100000%2b0400", function(err, response) {
+	var weekAgo = moment().subtract('days', __CONFIG.builds.age).format('YYYYMMDD');
+	_MakeGetUrlCall(__CONFIG.urls.builds + weekAgo + "T100000%2b0400", function(err, response) {
 		if (err) {
 			cb(err, null);
 		} else {
-			var s = [];
-			var f = [];
-			var u = [];
+			var s = [],
+				f = [],
+				u = [];
 			//group builds by status
 			response = utilities.group(response.build, function(groupby) {
 				return [groupby.status];
@@ -296,7 +326,7 @@ function _GetBuilds(cb) {
 			//Success
 			//Remove build steps except start and stop
 			var SUCCESS = response.SUCCESS.filter(function(item) {
-				if (item.buildTypeId == 'bramley_PublishToStore' || item.buildTypeId == 'bramley_InitiateBuild') {
+				if (item.buildTypeId == __CONFIG.builds.finishstep || item.buildTypeId == __CONFIG.builds.startstep) {
 					return true;
 				}
 				return false;
@@ -310,7 +340,7 @@ function _GetBuilds(cb) {
 			//Failure
 			//Remove build steps except start and stop
 			var FAILURE = response.FAILURE.filter(function(item) {
-				if (item.buildTypeId == 'bramley_PublishToStore' || item.buildTypeId == 'bramley_InitiateBuild') {
+				if (item.buildTypeId == __CONFIG.builds.finishstep || item.buildTypeId == __CONFIG.builds.startstep) {
 					return true;
 				}
 				return false;

@@ -1,11 +1,12 @@
 doctype 5
-html
+html.full
   head
     meta(http-equiv="X-UA-Compatible" content="IE=edge")
     meta(http-equiv="PRAGMA" content="NO-CACHE")
     title Build Monitor
     link(rel="shortcut icon" href="images/Icon.ico")
     link(rel='stylesheet', href='/stylesheets/bootstrap/bootstrap.css')
+    link(href="/stylesheets/bootstrap/bootstrap-glyhicons.css" rel="stylesheet")
     script(src='js/lib/jquery/jquery.min.js').
     script(src='js/JavascriptUtilities.js').
     script(src='js/lib/bootstrap/bootstrap.js').
@@ -17,45 +18,99 @@ html
     script(src='js/controllers/controller.js').
     script(src='js/services/fileListService.js').
     style.
-      .inline-headers h5{
-        display: inline-block;
-        vertical-align: baseline;
-        padding-right: 3px;
+      @font-face {
+        font-family: 'Cabin';
+        font-style: normal;
+        font-weight: 400;
+        src: local('Cabin Regular'), local('Cabin-Regular'), url(/stylesheets/fonts/cabin-regular.woff2) format('woff2'), url(/stylesheets/fonts/cabin-regular.woff) format('woff');
+      }
+      @font-face {
+        font-family: 'Lobster';
+        font-style: normal;
+        font-weight: 400;
+        src: local('Lobster'), url(/stylesheets/fonts/lobster.woff2) format('woff2'), url(/stylesheets/fonts/lobster.woff) format('woff');
       }
       .navbar-brand{
         padding-bottom:2px;
       }
+      .icon{
+        padding-left: 3px;
+        padding-right: 3px;
+      }
+      body{
+        font-family: "Cabin", Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.42857143;
+        color: #ffffff;
+        background-color: #108a93;
+      }
+      h1{
+        font-size: 40px;
+      }
+      .well{
+        margin-left: 3px;
+        margin-right: 3px;
+      }
+      .no-margin{
+        margin-top: 1px;
+        margin-bottom: 1px;
+      }
+      .avg{
+        text-align: center;
+        font-size: 25px;
+      }
   body(ng-app='nodeApp' ng-controller="controller")
     nav.navbar.navbar-default
       .container
-        .navbar-brand Build Monitor
-          .inline-headers
-            h5 Total: {{Display.Count.All}} 
-            h5 Success: {{Display.Count.Success}} 
-            h5 Fail: {{Display.Count.Fail}} 
-        h5.pull-right {{Display.Run}}
+        h1.col-sm-6.no-margin Build Monitor
+        h2.pull-right.no-margin {{Display.Run}}
     .container
-      div.col-sm-4 TODAY
-        hr
-        div Average 
-          span {{Display.Today.Average}}
-        div Queue 
-          span {{Display.Today.Queue}}
-        div Success {{Display.Today.Success}}
-        div Fail {{Display.Today.Fail}}
-      div.col-sm-4 YESTERDAY
-        hr
-        div Average 
-          span {{Display.Yesterday.Average}}
-        div Queue 
-          span {{Display.Yesterday.Queue}}
-        div Success {{Display.Yesterday.Success}}
-        div Fail {{Display.Yesterday.Fail}}
-      div.col-sm-4 WEEK
-        hr
-        div Average 
-          span {{Display.Week.Average}}
-        div Queue 
-          span {{Display.Week.Queue}}
-        div Success {{Display.Week.Success}}
-        div Fail {{Display.Week.Fail}}
+      h1 Averages
+      .row
+        div.col-sm-4
+          .well
+            .avg
+              h2.no-margin Today
+              hr
+              div {{Display.Today.Average}}
+              div {{Display.Today.Queue}}
+              div
+                span.glyphicon.glyphicon-ok.icon 
+                {{Display.Today.Success}} 
+                span.glyphicon.glyphicon-remove.icon 
+                {{Display.Today.Fail}}
+        div.col-sm-4
+          .well 
+            .avg
+              h2.no-margin Yesterday
+              hr
+              div {{Display.Yesterday.Average}}
+              div {{Display.Yesterday.Queue}}
+              div
+                span.glyphicon.glyphicon-ok.icon 
+                {{Display.Yesterday.Success}}
+                span.glyphicon.glyphicon-remove.icon 
+                {{Display.Yesterday.Fail}}
+        div.col-sm-4
+          .well
+            .avg
+              h2.no-margin Last Week
+              hr
+              div {{Display.Week.Average}}
+              div {{Display.Week.Queue}}
+              div 
+                span.glyphicon.glyphicon-ok.icon
+                {{Display.Week.Success}}
+                span.glyphicon.glyphicon-remove.icon
+                {{Display.Week.Fail}}
+      hr
+      h1 Agents
+      .row
+        span.col-sm-3(ng-repeat="agent in Display.Agents")
+          .well.avg
+            {{agent.name}}
+            span.glyphicon.glyphicon-ok.icon(ng-show="agent.enabled")
+            span.glyphicon.glyphicon-remove.icon(ng-show="!agent.enabled")
+            span.glyphicon.glyphicon-exclamation-sign.icon(ng-show="!agent.connected || !agent.authorized || !agent.uptodate")
+        div(ng-show="Display.Agents.length == 0")
+          .well.col-md-12.avg There are no agents available to display

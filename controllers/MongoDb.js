@@ -8,7 +8,6 @@
     For more info on MongoDb module methods see readme.txt at root of MongoDbModule
 */
 var util = require('../Custom_Modules/utilities/index.js');
-var config = require('../config.js');
 var mongo = require('../Custom_Modules/MongoDbModule/mongoIndex.js');
 var fs = require('fs');
 var moment = require('moment');

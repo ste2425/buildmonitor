@@ -1,6 +1,10 @@
 app.controller('controller', function($scope, $http, $route, $timeout, fileListService) {
 
     $scope.init = function() {
+        $scope.getBuilds();
+        $scope.setBuildObject();
+    }
+    $scope.setBuildObject = function() {
         $scope.Display = {
             Count: {
                 All: 0,
@@ -25,9 +29,9 @@ app.controller('controller', function($scope, $http, $route, $timeout, fileListS
                 Success: 0,
                 Fail: 0
             },
+            Agents: [],
             Run: ''
         }
-        $scope.getBuilds();
     }
     $scope.getBuilds = function() {
         fileListService.getBuilds(function(err, data) {
@@ -46,11 +50,15 @@ app.controller('controller', function($scope, $http, $route, $timeout, fileListS
                 $scope.Display.Week.Average = calcAvg(data.Data.SevenDays.SUCCESS);
                 $scope.Display.Week.Success = data.Data.SevenDays.SUCCESS.length;
                 $scope.Display.Week.Fail = data.Data.SevenDays.FAILURE.length;
-                $scope.Display.Run = data.Data.Run;
 
                 $scope.Display.Count.All = data.Count.Total;
                 $scope.Display.Count.Success = data.Count.TotalSuccess;
                 $scope.Display.Count.Fail = data.Count.TotalFail;
+
+                $scope.Display.Agents = data.Agents
+                $scope.Display.Run = data.Data.Run;
+            }else{
+                $scope.setBuildObject();
             }
             $timeout($scope.getBuilds, 30000);
         })
@@ -60,18 +68,22 @@ app.controller('controller', function($scope, $http, $route, $timeout, fileListS
 });
 
 function calcAvg(items, t) {
-    var start = 'startDate';
-    var stop = 'finishDate';
-    var avg = 0;
-    if(t){
-        start = 'queuedDate';
-        stop = 'startDate';
+    if (items.length > 0) {
+        var start = 'startDate';
+        var stop = 'finishDate';
+        var avg = 0;
+        if (t) {
+            start = 'queuedDate';
+            stop = 'startDate';
+        }
+        for (var i in items) {
+            var d = moment(items[i][stop]).diff(moment(items[i][start]))
+            avg += d;
+        }
+        avg = avg / items.length;
+        d = moment.duration(avg);
+        return Math.floor(d.asHours()) + moment.utc(avg).format(":mm:ss");
+    } else {
+        return 'Rock - Hard Place';
     }
-    for (var i in items) {
-        var d = moment(items[i][stop]).diff(moment(items[i][start]))
-        avg += d;
-    }
-    avg = avg / items.length;
-    d = moment.duration(avg);
-    return Math.floor(d.asHours()) + moment.utc(avg).format(":mm:ss");
 }

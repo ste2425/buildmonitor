@@ -8,7 +8,11 @@ app.factory('fileListService', function($http) {
 				callback(null, data);
 			}).error(function(data, status, headers, config) {
 				//Failed HTTP call
-				callback(data, null);
+				callback({
+					Error: data,
+					Status: status,
+					Headers: headers
+				}, null);
 			})
 		}
 	}

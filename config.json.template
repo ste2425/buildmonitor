@@ -1,0 +1,19 @@
+{
+	"builds": {
+		"age": "[int] Number of days build backlog to request from team city",
+		"startstep": "[string] Name for the start build step EG bramley_InitiateBuild",
+		"finishstep": "[string] Name for the finish build step EG bramley_PublishToStore",
+		"checktimeout": "[int] Timeout value in milliseconds to poll team city for builds"
+	},
+	"urls": {
+		"agents" : "[string] Url for agents EG /guestAuth/app/rest/agents",
+		"builds": "[string] Url to reqest builds, should include any query parameters, last query mush be -> sinceDate: EG /guestAuth/app/rest/builds/?locator=count:10000,branch:default:any,sinceDate:"
+	},
+	"host": {
+		"hostname": "tclive",
+		"port": 8111
+	},
+	"application": {
+		"port": 3005
+	}
+}

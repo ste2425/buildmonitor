@@ -1,3 +1,5 @@
+GLOBAL.__CONFIG = require(__dirname + '/config.json');
+
 //Module dependencies.
 var express = require('express'),
   routes = require('./routes'),
@@ -36,16 +38,10 @@ app.get('/',function(req,res){
 });
 
 //api
-app.get('/find', function(req, res){
-  TCLive.findBuildsToAdd(function(err, data){
-    res.status(err ? 500 : 200).send(err || data);
-  }, true)
-});
-
 app.get('/read', function(req, res){
   TCLive.getBuilds(function(err, data){
     res.status(err ? 500 : 200).send(err || data);
   });
 })
 
-app.listen(process.env.PORT || 3005);
+app.listen(__CONFIG.application.port);
