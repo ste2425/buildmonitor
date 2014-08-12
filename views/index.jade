@@ -34,8 +34,8 @@ html.full
         padding-bottom:2px;
       }
       .icon{
-        padding-left: 3px;
-        padding-right: 3px;
+        margin-left: 10px;
+        margin-right: 10px;
       }
       body{
         font-family: "Cabin", Arial, sans-serif;
@@ -57,7 +57,9 @@ html.full
       }
       .avg{
         text-align: center;
-        font-size: 25px;
+        font-size: 35px;
+      }
+      .text{
       }
   body(ng-app='nodeApp' ng-controller="controller")
     nav.navbar.navbar-default
@@ -70,19 +72,19 @@ html.full
         div.col-sm-4
           .well
             .avg
-              h2.no-margin Today
+              h1.no-margin Today
               hr
               div {{Display.Today.Average}}
               div {{Display.Today.Queue}}
               div
                 span.glyphicon.glyphicon-ok.icon 
-                {{Display.Today.Success}} 
+                {{Display.Today.Success}}
                 span.glyphicon.glyphicon-remove.icon 
                 {{Display.Today.Fail}}
         div.col-sm-4
           .well 
             .avg
-              h2.no-margin Yesterday
+              h1.no-margin Yesterday
               hr
               div {{Display.Yesterday.Average}}
               div {{Display.Yesterday.Queue}}
@@ -94,7 +96,7 @@ html.full
         div.col-sm-4
           .well
             .avg
-              h2.no-margin Last Week
+              h1.no-margin Last Week
               hr
               div {{Display.Week.Average}}
               div {{Display.Week.Queue}}
