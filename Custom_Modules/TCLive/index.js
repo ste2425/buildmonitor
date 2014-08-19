@@ -9,15 +9,15 @@ var run = '';
 
 exports.getBuilds = function(callback) {
 	//Return all builds from database formatted for client.
+	var ts = 0,
+		tf = 0,
+		day = [],
+		yesterday = [],
+		week = [],
+		agents = [];
 	mongo.readBuild({}, function(err, data) {
 		if (!err) {
-			var t = data.Data.length,
-				ts = 0,
-				tf = 0,
-				day = [],
-				yesterday = [],
-				week = [],
-				agents = [];
+			var t = data.Data.length;
 			//Get build count
 			for (var i in data.Data) {
 				if (data.Data[i].status == 'SUCCESS') {
