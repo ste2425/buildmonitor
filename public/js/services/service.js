@@ -1,4 +1,4 @@
-app.factory('fileListService', function($http) {
+app.factory('service', function($http) {
 	return {
 		getBuilds: function(callback) {
 			$http({

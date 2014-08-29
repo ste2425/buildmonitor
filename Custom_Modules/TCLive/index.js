@@ -71,7 +71,7 @@ exports.getBuilds = function(callback) {
 		//Get agent info ToDo: Remove from here
 		_MakeGetUrlCall(__CONFIG.urls.agents, function(err, res) {
 			if (!err) {
-				async.map(res.agent, function(item, cb) {
+				async.mapSeries(res.agent, function(item, cb) {
 					_MakeGetUrlCall(item.href, function(err, agent) {
 						if (!err) {
 							agents.push(agent);

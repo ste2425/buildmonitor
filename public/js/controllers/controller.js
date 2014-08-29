@@ -1,8 +1,22 @@
-app.controller('controller', function($scope, $http, $route, $timeout, fileListService) {
+app.controller('controller', function($scope, $http, $route, $timeout, service) {
 
     $scope.init = function() {
-        $scope.getBuilds();
         $scope.setBuildObject();
+        $scope.getBuilds();
+        flashWarning('warning1', 900);
+        flashWarning('warning2', 900);
+    }
+
+    function flashWarning(className, speed) {
+        $('.' + className).animate({
+            backgroundColor: "rgba(211, 65, 65, 0.7)"
+        }, speed, function() {
+            $('.' + className).animate({
+                backgroundColor: "rgba(0, 0, 0, 0)"
+            }, speed, function() {
+                flashWarning(className, speed);
+            });
+        });
     }
     $scope.setBuildObject = function() {
         $scope.Display = {
@@ -30,12 +44,15 @@ app.controller('controller', function($scope, $http, $route, $timeout, fileListS
                 Fail: 0
             },
             Agents: [],
+            AgentErrors: [],
+            ShowWarning: false,
             Run: ''
         }
     }
     $scope.getBuilds = function() {
-        fileListService.getBuilds(function(err, data) {
+        service.getBuilds(function(err, data) {
             if (!err) {
+                $scope.Display.ShowWarning = false;
                 $scope.Display.Today.Queue = calcAvg(data.Data.Today.SUCCESS, true);
                 $scope.Display.Today.Average = calcAvg(data.Data.Today.SUCCESS);
                 $scope.Display.Today.Success = data.Data.Today.SUCCESS.length;
@@ -57,7 +74,15 @@ app.controller('controller', function($scope, $http, $route, $timeout, fileListS
 
                 $scope.Display.Agents = data.Agents
                 $scope.Display.Run = data.Data.Run;
-            }else{
+                
+                $scope.Display.Agents.forEach(function(item, i, arr) {
+                    //Build agent errors
+                    if (!item.enabled || !item.connected || !item.authorized || !item.uptodate) {
+                        $scope.Display.ShowWarning = true;
+                        arr[i].error = true;
+                    }
+                });
+            } else {
                 $scope.setBuildObject();
             }
             $timeout($scope.getBuilds, 30000);

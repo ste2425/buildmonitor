@@ -8,7 +8,7 @@ html.full
     link(rel='stylesheet', href='/stylesheets/bootstrap/bootstrap.css')
     link(href="/stylesheets/bootstrap/bootstrap-glyhicons.css" rel="stylesheet")
     script(src='js/lib/jquery/jquery.min.js').
-    script(src='js/JavascriptUtilities.js').
+    script(src='js/lib/jquery/jquery_colour.min.js').
     script(src='js/lib/bootstrap/bootstrap.js').
     script(src='js/lib/momentjs/moment.min.js').
     script(src='js/lib/angular/angular.js').
@@ -16,7 +16,7 @@ html.full
     script(src='js/lib/angular/angular-route.js').
     script(src='js/app.js').
     script(src='js/controllers/controller.js').
-    script(src='js/services/fileListService.js').
+    script(src='js/services/service.js').
     style.
       .navbar-brand{
         padding-bottom:2px;
@@ -56,6 +56,33 @@ html.full
       }
       .red{
         border-color: #ad1d28;
+      }
+      .error-content{
+        position: fixed;
+        width: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        border: 1px solid black!important;
+        padding: 10px;
+      }
+      .bottom{
+        bottom: 0;
+      }
+      .top{
+        top: 0;
+      }
+      .center{
+        text-align: center;
+      }
+      .error{
+        margin:3px;
+        border: 1px solid #b94a48;
+        background-color: #E0ADAD!important;
+        color: black;
+      }
+      .col-centered {
+          display:inline-block;
+          float:none;
+          text-align:left;
       }
   body(ng-app='nodeApp' ng-controller="controller").body
     .container(style="width: 100%;")
@@ -100,11 +127,17 @@ html.full
       hr.red
       h1 Agents
       .row
-        span.col-sm-3(ng-repeat="agent in Display.Agents")
-          .well.avg-small
+        span.col-sm-4(ng-repeat="agent in Display.Agents")
+          .well.avg-small(ng-class="{error: agent.error}")
             {{agent.name}}
             span.glyphicon.glyphicon-ok.icon(ng-show="agent.enabled")
             span.glyphicon.glyphicon-remove.icon(ng-show="!agent.enabled")
-            span.glyphicon.glyphicon-exclamation-sign.icon(ng-show="!agent.connected || !agent.authorized || !agent.uptodate")
+            span.glyphicon.glyphicon-ban-circle.icon(ng-show="!agent.authorized")
+            span.glyphicon.glyphicon-cloud-upload.icon(ng-show="!agent.connected")
+            span.glyphicon.glyphicon-refresh.icon(ng-show="!agent.uptodate")
         div(ng-show="Display.Agents.length == 0")
           .well.col-md-12.avg There are no agents available to display
+        .error-content.bottom.center.warning1(ng-show="Display.ShowWarning")
+          span Build Agent Warning
+        .error-content.top.center.warning2(ng-show="Display.ShowWarning")
+          span Build Agent Warning          
